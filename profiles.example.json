@@ -1,0 +1,14 @@
+[
+  {
+    "id": "assistant",
+    "name": "Assistant",
+    "subtitle": "assistant",
+    "default_visible": true
+  },
+  {
+    "id": "coder",
+    "name": "Coder",
+    "subtitle": "coder",
+    "default_visible": true
+  }
+]

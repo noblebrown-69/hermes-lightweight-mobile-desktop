@@ -1,0 +1,19 @@
+# Local secrets / machine-specific
+token
+api_key
+profiles.json
+.env
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Editor / OS
+.DS_Store
+*.swp
+.idea/
+.vscode/

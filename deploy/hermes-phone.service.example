@@ -1,0 +1,25 @@
+[Unit]
+Description=Hermes Lightweight Mobile Desktop
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/hermes-phone
+Restart=on-failure
+RestartSec=3
+# Bind to your Tailscale IP (or 127.0.0.1 for local-only).
+Environment=HERMES_PHONE_BIND=127.0.0.1
+Environment=HERMES_PHONE_PORT=9124
+Environment=HERMES_PHONE_GATEWAY=http://127.0.0.1:8642
+# token (default) | off — use off only when the bind is already private (Tailscale-only).
+Environment=HERMES_PHONE_AUTH=token
+Environment=HERMES_PHONE_HERMES_ENV=%h/.hermes/.env
+Environment=HERMES_PHONE_PROFILES_DIR=%h/.hermes/profiles
+# Optional overlays (display names / default_visible). Not required for discovery.
+# Environment=HERMES_PHONE_PROFILES_FILE=%h/.config/hermes-phone/profiles.json
+# Optional comma-separated profile ids marked default_visible when discovering.
+# Environment=HERMES_PHONE_DEFAULT_VISIBLE=assistant,coder
+
+[Install]
+WantedBy=default.target
