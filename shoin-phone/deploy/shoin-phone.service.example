@@ -1,0 +1,24 @@
+[Unit]
+Description=Shoin Phone (phone editor for a Markdown/HTML docs folder)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Point at your checkout.
+ExecStart=/usr/bin/python3 %h/src/hermes-lightweight-mobile-desktop/shoin-phone/shoin_phone.py
+Restart=on-failure
+RestartSec=2
+# 127.0.0.1 when fronted by `tailscale serve`; or your Tailscale IPv4. Never 0.0.0.0 on a public network.
+Environment=SHOIN_PHONE_BIND=127.0.0.1
+Environment=SHOIN_PHONE_PORT=9123
+# Folder of .md/.html/.txt files to edit (default ~/Docs).
+Environment=SHOIN_PHONE_ROOT=%h/Docs
+Environment=SHOIN_PHONE_TOKEN_FILE=%h/.config/shoin-phone/token
+# Optional URL path prefix for PWA install under one HTTPS host (see docs/tailscale-https-pwa.md).
+# Environment=SHOIN_PHONE_BASE_PATH=/shoin
+# Token auth is ON by default. Opt out only if your Tailscale ACLs are the auth you want:
+# Environment=SHOIN_PHONE_AUTH=off
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,16 @@
+[Unit]
+Description=Second Tailscale node (userspace) for Open WebUI HTTPS
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Own state dir + socket so it never touches the host's main tailscaled.
+# --port=0 picks a random UDP port; userspace networking needs no root / TUN device.
+ExecStartPre=/usr/bin/mkdir -p %h/.local/share/ts-owui
+ExecStart=/usr/sbin/tailscaled --tun=userspace-networking --statedir=%h/.local/share/ts-owui --socket=%h/.local/share/ts-owui/tailscaled.sock --port=0
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target

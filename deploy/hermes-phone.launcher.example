@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
 # Install as ~/.local/bin/hermes-phone and point at your checkout.
+# HERMES_PHONE_BASE_PATH etc. come from the systemd unit Environment= lines.
 set -euo pipefail
 exec /usr/bin/python3 /path/to/hermes-lightweight-mobile-desktop/hermes_phone.py

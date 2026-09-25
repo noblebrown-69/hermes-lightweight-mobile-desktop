@@ -4,7 +4,6 @@ A thin, mobile-first web UI for [Hermes](https://github.com/NousResearch/hermes-
 
 Tap a bot. Chat. Switch bots without losing the gym-thread. No Desktop session reuse, no context bloat.
 
-![Hermes Lightweight Mobile Desktop on a phone](docs/screenshot.jpg)
 
 ## Why this exists
 
@@ -18,7 +17,20 @@ This project is that common case only:
 - **New chat** rotates the session id for the *active* bot only
 - Same `~/.hermes/profiles` tools, memory, and skills via the gateway
 - Separate phone session lane from Desktop (fresh `X-Hermes-Session-Id`, phone-scoped `X-Hermes-Session-Key`)
+- Streaming replies (SSE) with automatic fallback to a plain request
+- Installable as a phone app (PWA manifest + icons), optionally under a path prefix like `/hermes`
 - stdlib Python only (`ThreadingHTTPServer`) — no Node, no framework
+
+## What's in this repo
+
+| Path | What |
+|------|------|
+| `hermes_phone.py` | Hermes Phone — the bot side panel + chat (this README) |
+| [`shoin-phone/`](shoin-phone/README.md) | Shoin Phone — edit a folder of Markdown/HTML docs from your phone, with a conflict guard |
+| [`open-webui-pwa/`](open-webui-pwa/README.md) | Install Open WebUI as its own renamed/re-iconed phone app via Tailscale Serve overlays (no Open WebUI edits) |
+| [`docs/tailscale-https-pwa.md`](docs/tailscale-https-pwa.md) | How to install all of these as Android home-screen apps over Tailscale HTTPS |
+
+Also in the family, in its own repo: **[Oda Fit](https://github.com/noblebrown-69/oda-fit)** — a tiny C workout logger for a Hermes fitness ledger, same PWA/path-prefix setup (`/fit`).
 
 ## Requirements
 
@@ -51,7 +63,31 @@ With default auth (`HERMES_PHONE_AUTH=token`), the first visit needs `?token=…
 2. Optional: `HERMES_PHONE_AUTH=off` if the Tailscale ACL is enough.
 3. Bookmark `http://<tailscale-ip>:9124/` on the phone.
 
-See `deploy/hermes-phone.service.example` for a systemd user unit template.
+See `deploy/hermes-phone.service.example` for a systemd user unit template (and `deploy/hermes-phone.launcher.example` for the `~/.local/bin/hermes-phone` wrapper it runs).
+
+### Install as a phone app (HTTPS PWA)
+
+Android only installs a real app over HTTPS. Tailscale Serve gives you a tailnet-only certificate:
+
+```bash
+export HERMES_PHONE_BIND=127.0.0.1
+export HERMES_PHONE_BASE_PATH=/hermes
+python3 hermes_phone.py &
+tailscale serve --bg --set-path=/hermes http://127.0.0.1:9124/hermes
+tailscale serve --bg http://127.0.0.1:9124     # optional: bare host redirects to /hermes/
+```
+
+Open `https://your-machine.your-tailnet.ts.net/hermes/` in Chrome on the phone → **Install**. Use one hostname with a path prefix per app (`/hermes`, `/shoin`, `/fit`), not one port per app — Android WebAPK scopes ignore ports, so a root-scoped app on :443 swallows apps on other ports of the same host. The full walkthrough (enabling HTTPS/Serve, operator, root redirect, a second node for Open WebUI, icon safe zone) is in **[docs/tailscale-https-pwa.md](docs/tailscale-https-pwa.md)**.
+
+### Healthcheck
+
+```bash
+./healthcheck.sh                                   # http://127.0.0.1:9124
+HERMES_PHONE_BASE_URL=https://your-machine.your-tailnet.ts.net/hermes ./healthcheck.sh
+HERMES_PHONE_TOKEN=... ./healthcheck.sh --chat assistant   # plus one normal + one streaming chat
+```
+
+Checks `/api/health`, the manifest JSON, and `icon-192.png`; exits non-zero on failure.
 
 ## How chat works
 
@@ -103,6 +139,7 @@ Keep phone sessions in their own lane so Desktop context length stays healthy.
 | `HERMES_PHONE_PROFILES` | — | JSON overlays/list via env |
 | `HERMES_PHONE_DEFAULT_VISIBLE` | _(empty)_ | Comma-separated ids |
 | `HERMES_PHONE_CATALOG` | `discover` | `file` = allowlist-only |
+| `HERMES_PHONE_BASE_PATH` | _(empty)_ | URL prefix, e.g. `/hermes`, for PWA install under one HTTPS host |
 
 ## API (phone server)
 
@@ -111,6 +148,10 @@ Keep phone sessions in their own lane so Desktop context length stays healthy.
 - `GET /api/bots` — full catalog (reload on each request)
 - `POST /api/new-session` — mint session id
 - `POST /api/chat` — `{profile, session_id, messages}` → proxies to gateway
+- `POST /api/chat/stream` — same body; relays the gateway's OpenAI SSE stream
+- `GET /manifest.webmanifest`, `/icon-192.png`, `/icon-512.png`, `/apple-touch-icon.png` — PWA (no auth)
+
+With `HERMES_PHONE_BASE_PATH=/hermes`, every route is also served under `/hermes/…`, and `GET /` redirects to `/hermes/`.
 
 ## Security
 
